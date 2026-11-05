@@ -15,15 +15,16 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ];
 
-app.use(cors({
+server.use(cors({
   origin: function (origin, callback) {
-    // Allow internal requests or tooling like Postman
+    // 1. Allow server-to-server, Postman, or local testing tools (no origin header)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // 2. Allow ANY subdomain or production domain containing your app name
+    if (origin.includes("mazdoorconnect") || origin.includes("localhost")) {
       return callback(null, true);
     } else {
-      return callback(new Error("CORS policy violation"), false);
+      return callback(new Error("Not allowed by CORS"), false);
     }
   },
   credentials: true
