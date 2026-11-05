@@ -6,14 +6,26 @@ const cors=require("cors")
 // const { connectDBsql, pool } = require("../config/sqlDb")
 const server=express();
 connectDB()
-const allowedOrigins = [
-  "http://localhost:5173", // Keep this for local development
-  "https://nirmaan-with-mazdoorconnect-frontend-production-a31c.up.railway.app" ,// Add your production frontend
-    process.env.FRONTEND_URL
-];
 // connectDBsql()
-server.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://nirmaan-with-mazdoorconnect-frontend-production.up.railway.app",
+  "https://nirmaan-with-mazdoorconnect-frontend-production-a31c.up.railway.app",
+  "https://nirmaan-with-mazdoorconnect-frontend-production-a31c.up.railway.app/",
+  process.env.FRONTEND_URL
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow internal requests or tooling like Postman
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("CORS policy violation"), false);
+    }
+  },
   credentials: true
 }));
 server.use(express.json());
