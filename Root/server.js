@@ -5,16 +5,8 @@ const connectDB=require("../config/db")
 const cors=require("cors")
 // const { connectDBsql, pool } = require("../config/sqlDb")
 const server=express();
-server.set("trust proxy", 1); 
 connectDB()
 // connectDBsql()
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://nirmaan-with-mazdoorconnect-frontend-production.up.railway.app",
-  "https://nirmaan-with-mazdoorconnect-frontend-production-a31c.up.railway.app",
-  "https://nirmaan-with-mazdoorconnect-frontend-production-a31c.up.railway.app/",
-  process.env.FRONTEND_URL
-];
 
 server.use(
   cors({
