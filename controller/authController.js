@@ -56,20 +56,21 @@ exports.login=async(req,res)=>{
 
         user.refreshToken=refreshToken
         await user.save()
-        res.cookie("accessToken",accessToken,{
-            httpOnly:true,
-            secure:process.env.NODE_ENV==="development",
-            sameSite:"strict",
-            maxAge: 15 * 60 * 1000,
-            
-        })
-        res.cookie("refreshToken",refreshToken,{
-            httpOnly:true,
-            secure:process.env.NODE_ENV==="development",
-            sameSite:"strict",
-             maxAge: 7 * 24 * 60 * 60 * 1000,
-        })
-        res.status(200).json({message:"wellcome back",user,accessToken})
+const isProduction = process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT;
+
+res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProduction,               // MUST be true in production over HTTPS
+    sameSite: isProduction ? "none" : "lax", // MUST be "none" for cross-domain cookies on Railway
+    maxAge: 15 * 60 * 1000,
+});
+
+res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProduction,               // MUST be true in production over HTTPS
+    sameSite: isProduction ? "none" : "lax", // MUST be "none" for cross-domain cookies on Railway
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+});        res.status(200).json({message:"wellcome back",user,accessToken})
     }catch(err){
         res.status(500).json({message:err.message})
         console.log(err.message);
