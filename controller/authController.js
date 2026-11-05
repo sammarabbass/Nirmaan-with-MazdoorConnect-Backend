@@ -31,82 +31,101 @@ exports.register=async(req,res)=>{
         
     }
 }
+const jwt = require("jsonwebtoken");
+const User = require("../models/User"); // Adjust path to your User model if different
 
-exports.login=async(req,res)=>{
-    const {cnic}=req.body;
-    try{
-        const user=await User.findOne({cnic})
-                if(cnic===13){
-           return res.status(400).json({message:"13 number is required"})
-            console.log("13 number is required");
-        }
-        if(!user){
-           return res.status(404).json({message:"no registration"})
-        }
-        const accessToken=jwt.sign(
-            {id:user.id,role:user.role},
-            process.env.JWT_SECRET,
-            {expiresIn:"15m"}
-        )
-        const refreshToken=jwt.sign(
-            {id:user._id.toString(),role:user.role},
-            process.env.REFRESH_SECRET,
-            {expiresIn:"7d"}
-        )
-
-        user.refreshToken=refreshToken
-        await user.save()
+// Helper to safely detect production environment on Railway
 const isProduction = process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT;
 
-res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    secure: isProduction,               // MUST be true in production over HTTPS
-    sameSite: isProduction ? "none" : "lax", // MUST be "none" for cross-domain cookies on Railway
-    maxAge: 15 * 60 * 1000,
-});
-
-res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: isProduction,               // MUST be true in production over HTTPS
-    sameSite: isProduction ? "none" : "lax", // MUST be "none" for cross-domain cookies on Railway
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-});        res.status(200).json({message:"wellcome back",user,accessToken})
-    }catch(err){
-        res.status(500).json({message:err.message})
-        console.log(err.message);
-    }
-
-}
-
-exports.refresh_token=async(req,res)=>{
-    const {token}=req.cookies.refreshToken
-    if(!token){
-        return res.status(404).json({message:"no refresh_token"})
-    }
-    try{
-        const decoded=jwt.verify(token,process.env.REFRESH_SECRET)
-        const user=await User.findById(decoded.id)
-        if(!user||user.refreshToken!==token){
-            return res.status(403).json({message:"invalid Token"})
-        }
-        const newAccessToken=jwt.sign(
-            {id:user._id.toString(),role:user.role},
-            process.env.JWT_SECRET,
-            {expiresIn:"15m"}
-        )
-        res.cookie("accessToken", newAccessToken,{
-            httpOnly:true,
-            secure:process.env.NODE_ENV==="development",
-            sameSite:"strict",
-            maxAge: 15 * 60 * 1000,
-        })
-        res.json({message:"token refresh ",accessToken:newAccessToken})
-    }catch(err){
-        res.status(500).json({message:err.message})
-        console.log(err.message);
+exports.login = async (req, res) => {
+    try {
+        const { cnic } = req.body;
         
+        // Find user by CNIC
+        const user = await User.findOne({ cnic });
+        if (!user) {
+            return res.status(404).json({ message: "User nahi mila!" });
+        }
+
+        // Generate Tokens (Ensure these secret keys match your Railway Variables)
+        const accessToken = jwt.sign(
+            { id: user._id.toString(), role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" }
+        );
+        
+        const refreshToken = jwt.sign(
+            { id: user._id.toString() },
+            process.env.REFRESH_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        // Save refresh token to user database
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        // Issue Access Token Cookie
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: isProduction,                   // true on Railway (HTTPS), false on Localhost
+            sameSite: isProduction ? "none" : "lax", // none on Railway for cross-site, lax on Localhost
+            maxAge: 15 * 60 * 1000,                  // 15 Minutes
+        });
+
+        // Issue Refresh Token Cookie
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: isProduction,                   // true on Railway (HTTPS), false on Localhost
+            sameSite: isProduction ? "none" : "lax", // none on Railway for cross-site, lax on Localhost
+            maxAge: 7 * 24 * 60 * 60 * 1000,         // 7 Days
+        });
+
+        return res.status(200).json({ message: "Welcome back!", user, accessToken });
+
+    } catch (err) {
+        console.error("Login Error:", err.message);
+        return res.status(500).json({ message: err.message });
     }
-}
+};
+
+exports.refresh_token = async (req, res) => {
+    // FIX: Read cookie directly as a string, do not destructure {token}
+    const token = req.cookies.refreshToken;
+    
+    if (!token) {
+        return res.status(401).json({ message: "no refresh_token" });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, process.env.REFRESH_SECRET);
+        const user = await User.findById(decoded.id);
+        
+        if (!user || user.refreshToken !== token) {
+            return res.status(403).json({ message: "invalid Token" });
+        }
+        
+        // Generate a fresh access token
+        const newAccessToken = jwt.sign(
+            { id: user._id.toString(), role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" }
+        );
+        
+        // Issue updated Access Token Cookie with production safety configurations
+        res.cookie("accessToken", newAccessToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+            maxAge: 15 * 60 * 1000,
+        });
+        
+        return res.json({ message: "token refresh", accessToken: newAccessToken });
+
+    } catch (err) {
+        console.error("Refresh Token Error:", err.message);
+        return res.status(403).json({ message: "Session expired, check back later." });
+    }
+};
 
 
 exports.getAllData=async(req,res)=>{
