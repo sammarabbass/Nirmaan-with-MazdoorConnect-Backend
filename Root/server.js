@@ -16,21 +16,25 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ];
 
-server.use(cors({
-  origin: function (origin, callback) {
-    // 1. Allow server-to-server, Postman, or local testing tools (no origin header)
-    if (!origin) return callback(null, true);
-    
-    // 2. Allow ANY subdomain or production domain containing your app name
-    if (origin.includes("mazdoorconnect") || origin.includes("localhost")) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("Not allowed by CORS"), false);
-    }
-  },
-  credentials: true
-}));
-server.use(express.json());
+server.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow internal tooling requests or local testing configurations (no origin header)
+      if (!origin) return callback(null, true);
+      
+      // Auto-whitelist localhost and any production subdomain containing your app phrase
+      if (origin.includes("mazdoorconnect") || origin.includes("localhost")) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS validation mismatch"), false);
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Crucial to allow preflight checks
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200 // Some legacy browsers choke on 204 for preflight checks
+  })
+);server.use(express.json());
 
 server.use(cookieParser())
 
