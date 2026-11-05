@@ -8,7 +8,8 @@ const server=express();
 connectDB()
 const allowedOrigins = [
   "http://localhost:5173", // Keep this for local development
-  "https://nirmaan-with-mazdoorconnect-frontend-production.up.railway.app" // Add your production frontend
+  "https://nirmaan-with-mazdoorconnect-frontend-production.up.railway.app" ,// Add your production frontend
+    process.env.FRONTEND_URL
 ];
 // connectDBsql()
 server.use(
