@@ -5,6 +5,7 @@ const connectDB=require("../config/db")
 const cors=require("cors")
 // const { connectDBsql, pool } = require("../config/sqlDb")
 const server=express();
+server.set("trust proxy", 1); 
 connectDB()
 // connectDBsql()
 const allowedOrigins = [
