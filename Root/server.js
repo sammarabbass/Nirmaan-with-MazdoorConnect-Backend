@@ -13,16 +13,16 @@ const allowedOrigins = [
   "https://nirmaan-with-mazdoorconnect-frontend-production.up.railway.app",
   "https://nirmaan-with-mazdoorconnect-frontend-production-a31c.up.railway.app",
   "https://nirmaan-with-mazdoorconnect-frontend-production-a31c.up.railway.app/",
+  "http://localhost:3000",
   process.env.FRONTEND_URL
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no Origin (curl, Postman, server-to-server)
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(null, false); // clean rejection, no 500
+    return callback(null, false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -30,8 +30,8 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
+server.use(cors(corsOptions));   // bas ye ek line kaafi hai
 server.use(cors(corsOptions));
-server.options("*", cors(corsOptions)); // handle preflight for every route
 server.use(express.json());
 
 server.use(cookieParser())

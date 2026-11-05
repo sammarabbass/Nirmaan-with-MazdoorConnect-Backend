@@ -1,8 +1,6 @@
 
 const services=require("./Root/server")
 
-const PORT = process.env.PORT || 5000;
-
-services.listen(PORT, "0.0.0.0", () => {
-  console.log(`server is running on port ${PORT}`);
-});
+services.listen(process.env.PORT,()=>{
+    console.log(`server is runing on the port ${process.env.PORT}`);  
+})
