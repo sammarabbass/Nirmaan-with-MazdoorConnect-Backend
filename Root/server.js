@@ -6,12 +6,25 @@ const cors=require("cors")
 // const { connectDBsql, pool } = require("../config/sqlDb")
 const server=express();
 connectDB()
-
+const allowedOrigins = [
+  "http://localhost:5173", // Keep this for local development
+  "https://nirmaan-with-mazdoorconnect-frontend-production.up.railway.app" // Add your production frontend
+];
 // connectDBsql()
-server.use(cors({
-  origin: "http://localhost:5173", // 1. Replace with your exact frontend URL (NO trailing slash!)
-  credentials: true                // 2. Allow cookies to be sent across origins
-}));
+server.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true, // MUST be true since you use withCredentials on frontend
+  })
+);;
 server.use(express.json());
 
 server.use(cookieParser());
